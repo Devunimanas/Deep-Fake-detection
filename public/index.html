@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Veritas // Deepfake Image Forensics & Detection System</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- Top Navigation Bar -->
+  <header class="navbar">
+    <div class="nav-brand">
+      <div class="brand-icon" id="brandIcon">
+        <!-- Shield icon injected via JS -->
+      </div>
+      <div class="brand-text">
+        <h1>VERITAS // FORENSICS</h1>
+        <span>Deepfake & Synthetic Media Detection System</span>
+      </div>
+    </div>
+
+    <div class="nav-status">
+      <div class="status-badge">
+        <div class="status-dot"></div>
+        <span>ENGINES ACTIVE (FFT / ELA / PRNU / EXIF)</span>
+      </div>
+    </div>
+
+    <div class="nav-actions">
+      <button class="btn btn-outline btn-sm" id="btnResetScan" title="Reset workspace">
+        <span class="icon-slot" id="iconReset"></span> Reset
+      </button>
+      <button class="btn btn-primary btn-sm" id="btnExportTop">
+        <span class="icon-slot" id="iconExportTop"></span> Export Audit Report
+      </button>
+    </div>
+  </header>
+
+  <!-- Main Three-Column Forensic Workspace -->
+  <main class="app-container">
+
+    <!-- LEFT PANEL: Source Input & Settings -->
+    <aside class="panel panel-controls">
+      <div class="panel-header">
+        <span class="panel-title"><span class="icon-slot" id="iconInputTitle"></span> Source Input</span>
+        <span class="sample-tag tag-success" style="font-size: 0.65rem;">ONLINE</span>
+      </div>
+
+      <!-- Drag & Drop Zone -->
+      <div class="dropzone" id="dropzone">
+        <input type="file" id="fileInput" accept="image/png, image/jpeg, image/webp" style="display: none;">
+        <div class="dropzone-icon" id="dropzoneIcon"></div>
+        <div class="dropzone-text">
+          <h3>Drop Image for Analysis</h3>
+          <p>Supports JPG, PNG, WEBP (Max 25MB)</p>
+        </div>
+        <div class="dropzone-actions">
+          <button class="btn btn-outline btn-sm" id="btnBrowseFile">
+            <span class="icon-slot" id="iconBrowse"></span> Browse Files
+          </button>
+          <button class="btn btn-outline btn-sm" id="btnOpenWebcam">
+            <span class="icon-slot" id="iconWebcam"></span> Webcam
+          </button>
+        </div>
+      </div>
+
+      <!-- Quick Test Sample Library -->
+      <div class="sample-section">
+        <div class="section-subtitle">Preloaded Test Library (1-Click Test)</div>
+        <div class="sample-grid" id="sampleGrid">
+          <!-- Dynamically populated from SampleLibrary -->
+        </div>
+      </div>
+
+      <!-- Sensitivity & Tuning Controls -->
+      <div class="controls-group">
+        <div class="section-subtitle">Forensic Tuning Parameters</div>
+
+        <div class="slider-field">
+          <div class="slider-header">
+            <span>ELA Enhancement Multiplier</span>
+            <span class="slider-val" id="valElaScale">25x</span>
+          </div>
+          <input type="range" id="sliderElaScale" min="10" max="45" value="25" step="1">
+        </div>
+
+        <div class="slider-field">
+          <div class="slider-header">
+            <span>JPEG Recompression Baseline</span>
+            <span class="slider-val" id="valJpegQuality">90%</span>
+          </div>
+          <input type="range" id="sliderJpegQuality" min="80" max="98" value="90" step="1">
+        </div>
+      </div>
+    </aside>
+
+    <!-- CENTER PANEL: Interactive Inspection Viewport -->
+    <section class="panel panel-viewport">
+      <div class="panel-header">
+        <span class="panel-title"><span class="icon-slot" id="iconViewportTitle"></span> Inspection Viewport</span>
+        <div class="viewport-tabs" id="viewportTabs">
+          <button class="v-tab active" data-mode="original">Original</button>
+          <button class="v-tab" data-mode="ela">Error Level Analysis (ELA)</button>
+          <button class="v-tab" data-mode="fft">2D Fourier Spectrum (FFT)</button>
+          <button class="v-tab" data-mode="noise">Laplacian Noise (PRNU)</button>
+          <button class="v-tab" data-mode="split">Split Comparator</button>
+        </div>
+      </div>
+
+      <!-- Viewport Stage -->
+      <div class="stage-container" id="stageContainer">
+        <div class="scan-laser" id="scanLaser"></div>
+
+        <div class="stage-wrapper" id="stageWrapper">
+          <!-- Single View Mode (Canvas / Image) -->
+          <canvas id="viewCanvas"></canvas>
+
+          <!-- Split View Comparator Mode -->
+          <div class="split-container" id="splitContainer" style="display: none;">
+            <canvas id="splitBaseCanvas"></canvas>
+            <div class="split-layer-top" id="splitTopLayer">
+              <canvas id="splitOverlayCanvas"></canvas>
+            </div>
+            <div class="split-handle" id="splitHandle">
+              <div class="split-handle-btn" id="splitHandleBtn">
+                <span class="icon-slot" id="iconSplit"></span>
+              </div>
+            </div>
+            <div class="split-label split-label-left" id="splitLabelLeft">ORIGINAL</div>
+            <div class="split-label split-label-right" id="splitLabelRight">ELA FORENSICS</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Viewport Metadata Footer -->
+      <div class="viewport-footer">
+        <div class="meta-item">
+          <span>Dimensions:</span> <span id="metaDim">--</span>
+        </div>
+        <div class="meta-item">
+          <span>SHA-256:</span> <span id="metaHash" style="max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">--</span>
+        </div>
+        <div class="meta-item">
+          <span>Latency:</span> <span id="metaLatency">--</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- RIGHT PANEL: Diagnostics & Verdict -->
+    <aside class="panel panel-diagnostics">
+      <div class="panel-header">
+        <span class="panel-title"><span class="icon-slot" id="iconDiagnosticsTitle"></span> Forensic Verdict</span>
+        <span class="sample-tag tag-danger" id="riskBadge">SCANNING</span>
+      </div>
+
+      <!-- Master Classification & Probability Card -->
+      <div class="verdict-card" id="verdictCard">
+        <div class="gauge-box">
+          <svg class="gauge-svg" viewBox="0 0 140 140">
+            <circle class="gauge-circle-bg" cx="70" cy="70" r="60"></circle>
+            <circle class="gauge-circle-val" id="gaugeCircle" cx="70" cy="70" r="60"></circle>
+          </svg>
+          <div class="gauge-inner">
+            <div class="gauge-pct" id="gaugePct">0%</div>
+            <div class="gauge-lbl">SYNTHETIC RISK</div>
+          </div>
+        </div>
+
+        <div class="verdict-title" id="verdictTitle">Awaiting Image</div>
+        <div class="verdict-summary" id="verdictSummary">
+          Load or drop an image to compute multi-layer Fourier, compression, and sensor noise forensic analysis.
+        </div>
+      </div>
+
+      <!-- 5-Metric Breakdown Bars -->
+      <div class="metrics-list">
+        <div class="section-subtitle">Forensic Dimension Telemetry</div>
+
+        <div class="metric-row">
+          <div class="metric-meta">
+            <span class="metric-name">Fourier Spectral Peaks (FFT)</span>
+            <span class="metric-score" id="scoreFFT">0 / 100</span>
+          </div>
+          <div class="bar-track">
+            <div class="bar-fill bar-danger" id="barFFT"></div>
+          </div>
+        </div>
+
+        <div class="metric-row">
+          <div class="metric-meta">
+            <span class="metric-name">Compression Discontinuity (ELA)</span>
+            <span class="metric-score" id="scoreELA">0 / 100</span>
+          </div>
+          <div class="bar-track">
+            <div class="bar-fill bar-warning" id="barELA"></div>
+          </div>
+        </div>
+
+        <div class="metric-row">
+          <div class="metric-meta">
+            <span class="metric-name">Sensor Noise Inconsistency (PRNU)</span>
+            <span class="metric-score" id="scoreNoise">0 / 100</span>
+          </div>
+          <div class="bar-track">
+            <div class="bar-fill bar-danger" id="barNoise"></div>
+          </div>
+        </div>
+
+        <div class="metric-row">
+          <div class="metric-meta">
+            <span class="metric-name">Chrominance / YCbCr Aberration</span>
+            <span class="metric-score" id="scoreChroma">0 / 100</span>
+          </div>
+          <div class="bar-track">
+            <div class="bar-fill bar-success" id="barChroma"></div>
+          </div>
+        </div>
+
+        <div class="metric-row">
+          <div class="metric-meta">
+            <span class="metric-name">Provenance & Metadata Profile</span>
+            <span class="metric-score" id="scoreMeta">0 / 100</span>
+          </div>
+          <div class="bar-track">
+            <div class="bar-fill bar-warning" id="barMeta"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Granular Evidence Findings Log -->
+      <div class="section-subtitle">Itemized Forensic Evidence</div>
+      <div class="findings-list" id="findingsList">
+        <!-- Dynamically populated findings cards -->
+      </div>
+
+      <!-- Export & Download Actions -->
+      <div style="display: flex; gap: 8px; margin-top: auto;">
+        <button class="btn btn-primary" id="btnExportReport" style="flex: 1;">
+          <span class="icon-slot" id="iconExport"></span> Export Certificate
+        </button>
+        <button class="btn btn-outline" id="btnDownloadJson" title="Download raw forensic telemetry (JSON)">
+          <span class="icon-slot" id="iconJson"></span> JSON
+        </button>
+      </div>
+    </aside>
+
+  </main>
+
+  <!-- Webcam Capture Modal -->
+  <div class="modal-backdrop" id="webcamModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 class="modal-title">Live Camera Capture</h3>
+        <button class="modal-close" id="btnCloseWebcam">&times;</button>
+      </div>
+      <div class="webcam-video-box">
+        <video id="webcamVideo" autoplay playsinline></video>
+      </div>
+      <div style="display: flex; justify-content: flex-end; gap: 10px;">
+        <button class="btn btn-outline" id="btnCancelWebcam">Cancel</button>
+        <button class="btn btn-primary" id="btnCaptureSnapshot">Capture & Inspect</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="icons.js"></script>
+  <script src="forensics.js"></script>
+  <script src="samples.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
