@@ -25,6 +25,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const DOM = {
     // Icons
     brandIcon: document.getElementById('brandIcon'),
+    iconDownloadZip: document.getElementById('iconDownloadZip'),
     dropzoneIcon: document.getElementById('dropzoneIcon'),
     iconReset: document.getElementById('iconReset'),
     iconExportTop: document.getElementById('iconExportTop'),
@@ -106,6 +107,7 @@ document.addEventListener('DOMContentLoaded', () => {
   function initIcons() {
     if (window.Icons) {
       DOM.brandIcon.innerHTML = Icons.scan;
+      if (DOM.iconDownloadZip) DOM.iconDownloadZip.innerHTML = Icons.download;
       DOM.dropzoneIcon.innerHTML = Icons.upload;
       DOM.iconReset.innerHTML = Icons.activity;
       DOM.iconExportTop.innerHTML = Icons.fileText;
