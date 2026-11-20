@@ -201,13 +201,19 @@ const server = http.createServer((req, res) => {
     return;
   }
 
-  // Static File Serving
+  // Static File Serving with auto-fallback (checks public/ first, then root folder)
   let safePath = path.normalize(pathname).replace(/^(\.\.[\/\\])+/, '');
   if (safePath === '/' || safePath === '') {
     safePath = '/index.html';
   }
 
-  const filePath = path.join(PUBLIC_DIR, safePath);
+  let filePath = path.join(PUBLIC_DIR, safePath);
+  if (!fs.existsSync(filePath)) {
+    const rootCandidate = path.join(__dirname, safePath);
+    if (fs.existsSync(rootCandidate)) {
+      filePath = rootCandidate;
+    }
+  }
 
   fs.stat(filePath, (err, stats) => {
     if (err || !stats.isFile()) {
